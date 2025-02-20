@@ -23,6 +23,7 @@ include_directories(include)
 add_executable(JsonRestLibrary
     src/json_parser.cpp
     src/rest_client.cpp
+    src/data_analyzer.cpp
     src/main.cpp
 )
 
