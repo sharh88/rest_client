@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(JsonRestLibrary)
+project(rest_client)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -20,7 +20,7 @@ FetchContent_MakeAvailable(nlohmann_json)
 include_directories(include)
 
 # Add source files
-add_executable(JsonRestLibrary
+add_executable(rest_client
     src/json_parser.cpp
     src/rest_client.cpp
     src/data_analyzer.cpp
@@ -28,4 +28,4 @@ add_executable(JsonRestLibrary
 )
 
 # Link libraries
-target_link_libraries(JsonRestLibrary nlohmann_json::nlohmann_json)
+target_link_libraries(rest_client nlohmann_json::nlohmann_json)

@@ -7,92 +7,101 @@ DataAnalyzer::DataAnalyzer(const std::unique_ptr<std::vector<User>> users) {
     }
 }
 
-nlohmann::json DataAnalyzer::calculateAverageAge() {
-    nlohmann::json result;
-    for (const auto& [city, users] : map_user_city) {
-        double totalAge = 0;
-        for (const auto& user : users) {
-            totalAge += user.getAge();
-        }
-        double averageAge = users.empty() ? 0 : totalAge / users.size();
-        result[city] = averageAge;
-    }
-    return result;
+nlohmann::json DataAnalyzer::getStatistics() const {
+    nlohmann::json statistics;
+
+    statistics["AVG Age Users per City"] = computeAverageAgePerCity();
+    statistics["AVG Friends per City"] = computeAverageFriendsPerCity();
+    statistics["User w/ most Friends per City"] = findUserWithMostFriendsPerCity();
+    statistics["Common First Name"] = findMostCommonFirstName();
+    statistics["Most Common Friend's Hobby"] = findMostCommonHobby();
+    
+    return statistics;
 }
 
-nlohmann::json DataAnalyzer::calculateAverageFriends() {
-    nlohmann::json result;
+// Computes the average age of users per city
+nlohmann::json DataAnalyzer::computeAverageAgePerCity() const {
+    
+    nlohmann::json avgAgePerCity;
+    
     for (const auto& [city, users] : map_user_city) {
-        double totalFriends = 0;
-        for (const auto& user : users) {
-            totalFriends += user.getFriends().size();
+        if (!users.empty()) {
+            double totalAge = std::accumulate(users.begin(), users.end(), 0.0,
+                [](double sum, const User& user) { return sum + user.getAge(); });
+            avgAgePerCity[city] = totalAge / users.size();
+        } else {
+            avgAgePerCity[city] = 0.0;
         }
-        double averageFriends = users.empty() ? 0 : totalFriends / users.size();
-        result[city] = averageFriends;
     }
-    return result;
+    return avgAgePerCity;
 }
 
-nlohmann::json DataAnalyzer::findUserWithMostFriends() {
-    nlohmann::json result;
+// Computes the average number of friends per user in each city
+nlohmann::json  DataAnalyzer::computeAverageFriendsPerCity() const {
+    
+    nlohmann::json avgFriendsPerCity;
+    
     for (const auto& [city, users] : map_user_city) {
-        std::string maxFriendUser = "";
-        int maxFriends = -1;
-        for (const auto& user : users) {
-            std::vector<Friend> friends = user.getFriends();
-            if (static_cast<int>(friends.size()) > maxFriends) {
-                maxFriends = friends.size();
-                maxFriendUser = user.getName();
-            }
-        }
-        if (maxFriends != -1) {
-            result[city] = {{"name", maxFriendUser}, {"friend_count", maxFriends}};
+        if (!users.empty()) {
+            double totalFriends = std::accumulate(users.begin(), users.end(), 0.0,
+                [](double sum, const User& user) { return sum + user.getFriends().size(); });
+            avgFriendsPerCity[city] = totalFriends / users.size();
+        } else {
+            avgFriendsPerCity[city] = 0.0;
         }
     }
-    return result;
+    return avgFriendsPerCity;
 }
 
-std::string DataAnalyzer::findMostCommonFirstName() {
-    std::map<std::string, int> nameCounts;
+// Finds the user with the most friends per city
+nlohmann::json  DataAnalyzer::findUserWithMostFriendsPerCity() const {
+    
+    nlohmann::json mostFriendsPerCity;
+    
     for (const auto& [city, users] : map_user_city) {
-        for (const auto& user : users) {
-            std::string name = user.getName();
-            std::string firstName = name.substr(0, name.find(' '));
-            nameCounts[firstName]++;
+        if (!users.empty()) {
+            auto maxUser = std::max_element(users.begin(), users.end(),
+                [](const User& a, const User& b) { return a.getFriends().size() < b.getFriends().size(); });
+            mostFriendsPerCity[city] = maxUser->getName();
         }
     }
-
-    std::string mostCommonName;
-    int maxCount = 0;
-    for (const auto& [name, count] : nameCounts) {
-        if (count > maxCount) {
-            mostCommonName = name;
-            maxCount = count;
-        }
-    }
-    return mostCommonName;
+    return mostFriendsPerCity;
 }
 
-std::string DataAnalyzer::findMostCommonHobby() {
-    std::map<std::string, int> hobbyCounts;
+// Finds the most common first name across all cities
+std::string DataAnalyzer::findMostCommonFirstName() const {
+    
+    std::unordered_map<std::string, int> firstNameCount;
+    
     for (const auto& [city, users] : map_user_city) {
         for (const auto& user : users) {
-            for (const auto& friend_obj : user.getFriends()) {
-                for (const auto& hobby : friend_obj.getHobbies()) {
-                    hobbyCounts[hobby]++;
+            firstNameCount[user.getName()]++;
+        }
+    }
+
+    auto mostCommon = std::max_element(firstNameCount.begin(), firstNameCount.end(),
+        [](const auto& a, const auto& b) { return a.second < b.second; });
+
+    return (mostCommon != firstNameCount.end()) ? mostCommon->first : "";
+}
+
+// Finds the most common hobby among all friends in all cities
+std::string DataAnalyzer::findMostCommonHobby() const {
+    
+    std::unordered_map<std::string, int> hobbyCount;
+    
+    for (const auto& [city, users] : map_user_city) {
+        for (const auto& user : users) {
+            for (const auto& friendObj : user.getFriends()) {
+                for (const auto& hobby : friendObj.getHobbies()) {
+                    hobbyCount[hobby]++;
                 }
             }
         }
     }
 
-    std::string mostCommonHobby;
-    int maxCount = 0;
-    for (const auto& [hobby, count] : hobbyCounts) {
-        if (count > maxCount) {
-            mostCommonHobby = hobby;
-            maxCount = count;
-        }
-    }
-    return mostCommonHobby;
-}
+    auto mostCommon = std::max_element(hobbyCount.begin(), hobbyCount.end(),
+        [](const auto& a, const auto& b) { return a.second < b.second; });
 
+    return (mostCommon != hobbyCount.end()) ? mostCommon->first : "";
+}

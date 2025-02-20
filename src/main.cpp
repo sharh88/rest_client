@@ -14,12 +14,14 @@ int main(int argc, char* argv[]) {
 
     std::string url = argv[1];
     RestClient client = RestClient();
-    string response = client.make_request(url);
-    unique_ptr<vector<User>> users = JSONParser::parse(response);
-    DataAnalyzer analyzer(std::move(users));
-    cout << analyzer.calculateAverageAge() << endl;
-    cout << analyzer.calculateAverageFriends() << endl;
-    cout << analyzer.findMostCommonFirstName() << endl;
-    cout << analyzer.findMostCommonHobby() << endl;
-    cout << analyzer.findUserWithMostFriends() << endl;
+    try {
+        string response = client.makeGetRequest(url);
+        unique_ptr<vector<User>> users = JSONParser::parse(response);
+        DataAnalyzer analyzer(std::move(users));
+        cout << analyzer.getStatistics() << endl;
+    }
+    catch (const std::runtime_error& e)
+    {
+        cerr << "Error: " << e.what() << endl;
+    }
 }
