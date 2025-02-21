@@ -62,7 +62,8 @@ nlohmann::json  DataAnalyzer::findUserWithMostFriendsPerCity() const {
         if (!users.empty()) {
             auto maxUser = std::max_element(users.begin(), users.end(),
                 [](const User& a, const User& b) { return a.getFriends().size() < b.getFriends().size(); });
-            mostFriendsPerCity[city] = maxUser->getName();
+            mostFriendsPerCity[city] = {{"name", maxUser->getName()}, 
+                                        {"friend_count", maxUser->getFriends().size()}};
         }
     }
     return mostFriendsPerCity;
