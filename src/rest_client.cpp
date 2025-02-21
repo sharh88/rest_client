@@ -19,7 +19,7 @@ namespace {
     constexpr unsigned long BUFFER_SIZE = 5000;
 }
 
-void RestClient::close_socket(int socket_fd) {
+void RestClient::closeSocket(int socket_fd) {
     if (socket_fd != -1) {
 #ifdef _WIN32
         closesocket(socket_fd);
@@ -30,7 +30,7 @@ void RestClient::close_socket(int socket_fd) {
     }
 }
 
-int RestClient::connect_socket(const std::string& host, int port) {
+int RestClient::connectSocket(const std::string& host, int port) {
     struct addrinfo hints{}, *res;
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
@@ -64,12 +64,12 @@ int RestClient::connect_socket(const std::string& host, int port) {
     return sock;
 }
 
-void RestClient::send_request(const std::string& endpoint, const std::string& host, int socket_fd) {
+void RestClient::sendGetRequest(const std::string& endpoint, const std::string& host, int socket_fd) {
     std::string request = "GET " + endpoint + " HTTP/1.1\r\nHost: " + host + "\r\nConnection: close\r\n\r\n";
     send(socket_fd, request.c_str(), request.size(), 0);
 }
 
-std::string RestClient::receive_response(int socket_fd) {
+std::string RestClient::receiveResponse(int socket_fd) {
     char buffer[BUFFER_SIZE] = {0};
     std::string response;
     int bytes_received;
@@ -80,7 +80,7 @@ std::string RestClient::receive_response(int socket_fd) {
     return response;
 }
 
-void RestClient::parse_url(const std::string& url, std::string& host, int& port, std::string& path) {
+void RestClient::parseUrl(const std::string& url, std::string& host, int& port, std::string& path) {
     // Example: http://test.brightsign.io:3000/path/to/resource
     std::regex url_regex(R"(^([^:]+)://([^:]+)(?::(\d+))?(.*)$)");
     std::smatch match;
@@ -107,7 +107,7 @@ void RestClient::parse_url(const std::string& url, std::string& host, int& port,
 }
 
 // Function to extract the HTTP status code
-int RestClient::get_http_status_code(const std::string& response) {
+int RestClient::getHttpStatusCode(const std::string& response) {
     std::istringstream stream(response);
     std::string http_version;
     int status_code;
@@ -121,21 +121,21 @@ int RestClient::get_http_status_code(const std::string& response) {
     return -1; // Error case
 }
 
-std::string RestClient::make_request(std::string &url) {
+std::string RestClient::makeGetRequest(std::string &url) {
     std::string host;
     int port;
     std::string path;
 
     // Parse the full URL into host, port, and path
-    parse_url(url, host, port, path);
+    parseUrl(url, host, port, path);
     
-    int sock = connect_socket(host, port);
-    send_request(path, host, sock);
-    std::string response = receive_response(sock);
-    close_socket(sock);
+    int sock = connectSocket(host, port);
+    sendGetRequest(path, host, sock);
+    std::string response = receiveResponse(sock);
+    closeSocket(sock);
 
     // Parse the HTTP status code and check if it's successful (200)
-    int status_code = get_http_status_code(response);
+    int status_code = getHttpStatusCode(response);
     if (status_code != 200) {
         throw std::runtime_error("HTTP request failed with status code: " + std::to_string(status_code));
     }
